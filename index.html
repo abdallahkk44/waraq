@@ -100,6 +100,7 @@ textarea::placeholder{color:var(--muted); font-weight:400; font-size:17px}
     <button id="undo" type="button">↩ حذف آخر نتيجة</button>
     <button id="reset" type="button">🔄 جولة جديدة</button>
   </div>
+  <div id="offl" style="margin-top:14px;text-align:center;font-size:14px;color:#c9b8a8"></div>
 </div>
 
 <script>
@@ -239,8 +240,17 @@ textarea::placeholder{color:var(--muted); font-weight:400; font-size:17px}
 })();
 </script>
 <script>
+var st = document.getElementById('offl');
+function say(t){ if (st) st.textContent = t; }
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  navigator.serviceWorker.register('sw.js').then(function(){ return navigator.serviceWorker.ready; })
+    .then(function(){
+      say(navigator.serviceWorker.controller ? '✅ جاهز للعمل بدون إنترنت' : '✅ تم التخزين — أغلق التطبيق وافتحه مرة ثانية');
+    })
+    .catch(function(){ say('⚠️ تعذر تفعيل العمل بدون إنترنت'); });
+  navigator.serviceWorker.addEventListener('controllerchange', function(){ say('✅ جاهز للعمل بدون إنترنت'); });
+} else {
+  say('⚠️ هذا المتصفح لا يدعم العمل بدون إنترنت');
 }
 </script>
 </body>
