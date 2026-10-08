@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="نتائج الشد">
+<meta name="theme-color" content="#3a2a20">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>نتائج لعبة الشد</title>
+<style>
+:root{
+  --bg:#3a2a20; --paper:#d9ecf2; --ink:#2a1f3d; --muted:#5d6e7a; --lead:#12803f;
+  --focus:rgba(255,255,255,.45); --btn:#2a1f3d; --btnText:#ffffff; --shadow:rgba(0,0,0,.4);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14100d; --paper:#25313a; --ink:#e9f2f6; --muted:#9fb0bb; --lead:#4ade80;
+    --focus:rgba(255,255,255,.1); --btn:#e9f2f6; --btnText:#14100d; --shadow:rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14100d; --paper:#25313a; --ink:#e9f2f6; --muted:#9fb0bb; --lead:#4ade80;
+  --focus:rgba(255,255,255,.1); --btn:#e9f2f6; --btnText:#14100d; --shadow:rgba(0,0,0,.7);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100dvh; background:var(--bg); color:var(--ink);
+  font-family:'Tajawal',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+  display:flex; justify-content:center; padding:16px 14px 28px;
+}
+.wrap{width:100%; max-width:520px}
+.note{
+  background:var(--paper); border-radius:6px; box-shadow:0 10px 28px var(--shadow);
+  overflow:hidden;
+}
+.grid{display:grid; grid-template-columns:1fr 1fr}
+.grid > :first-child{border-inline-end:3px solid var(--ink)}
+.head{border-bottom:3px solid var(--ink)}
+textarea{
+  display:block; width:100%; border:0; background:transparent; color:var(--ink);
+  font:800 22px/1.3 'Tajawal',system-ui,sans-serif; text-align:center; resize:none;
+  padding:16px 6px 12px; outline:none; overflow:hidden;
+}
+textarea::placeholder{color:var(--muted); font-weight:400; font-size:17px}
+.row{display:grid; grid-template-columns:1fr 1fr; position:relative}
+.rn{position:absolute; inset-inline-start:8px; top:50%; transform:translateY(-50%); font:700 14px 'Tajawal',system-ui,sans-serif; color:var(--muted); pointer-events:none}
+.row input{
+  width:100%; height:58px; border:0; background:transparent; color:var(--ink);
+  font:700 30px 'Tajawal',system-ui,sans-serif; text-align:center; outline:none;
+  border-bottom:1px dashed rgba(120,140,155,.45); border-radius:0;
+}
+.row input:first-child{border-inline-end:3px solid var(--ink)}
+.row input.x{color:var(--muted); font-weight:400}
+.row input:focus, textarea:focus{background:var(--focus)}
+.cap{
+  text-align:center; font-size:14px; color:var(--muted); padding:8px 0 0;
+  border-top:3px solid var(--ink);
+}
+.tot{display:grid; grid-template-columns:1fr 1fr}
+.tot div{text-align:center; font:800 42px/1.4 'Tajawal',system-ui,sans-serif; padding:0 0 8px}
+.tot div:first-child{border-inline-end:3px solid var(--ink)}
+.tot .lead{color:var(--lead); text-decoration:underline; text-underline-offset:8px; text-decoration-thickness:3px}
+.info{border-top:1px dashed rgba(120,140,155,.6); padding:12px 14px 16px; text-align:center}
+.msg{font:700 18px/1.8 'Tajawal',system-ui,sans-serif}
+.msg.gap{color:var(--muted); font-weight:400; font-size:16px}
+.msg.need{font-size:22px; font-weight:800}
+.btns{display:flex; gap:10px; margin-top:16px}
+.btns button{
+  flex:1; padding:14px 8px; border:0; border-radius:12px; cursor:pointer;
+  background:var(--btn); color:var(--btnText);
+  font:700 17px 'Tajawal',system-ui,sans-serif;
+}
+.btns button.warn{background:#c0392b; color:#fff}
+.btns button:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="note">
+    <div class="grid head">
+      <textarea id="na" rows="2" placeholder="أسماء الفريق الأول" aria-label="أسماء الفريق الأول"></textarea>
+      <textarea id="nb" rows="2" placeholder="أسماء الفريق الثاني" aria-label="أسماء الفريق الثاني"></textarea>
+    </div>
+    <div id="rows"></div>
+    <div class="cap">المجموع</div>
+    <div class="tot"><div id="ta">0</div><div id="tb">0</div></div>
+    <div class="info">
+      <div id="msgs"></div>
+    </div>
+  </div>
+  <div class="btns">
+    <button id="undo" type="button">↩ حذف آخر نتيجة</button>
+    <button id="reset" type="button">🔄 جولة جديدة</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = 'shadd-scoreboard-v1';
+  var state = { names:['',''], rows:[['','']] };
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY));
+    if (saved && Array.isArray(saved.rows) && Array.isArray(saved.names)) state = saved;
+  } catch (e) {}
+
+  var $ = function(s){ return document.querySelector(s); };
+  var rowsEl = $('#rows');
+
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function num(v){ var n = parseFloat(String(v).replace(/[^\d.\-]/g,'')); return isNaN(n) ? 0 : n; }
+
+  function renderTotals(){
+    var t = [0,1].map(function(i){ return state.rows.reduce(function(s,r){ return s + num(r[i]); }, 0); });
+    [$('#ta'), $('#tb')].forEach(function(el, i){
+      el.textContent = t[i];
+      el.classList.toggle('lead', t[i] > t[1-i]);
+    });
+    renderInfo(t);
+  }
+
+  function nm(i){
+    var n = (state.names[i] || '').trim().replace(/\s*\n+\s*/g, ' و ');
+    return n || (i ? 'الفريق الثاني' : 'الفريق الأول');
+  }
+
+  function renderInfo(t){
+    var box = $('#msgs');
+    box.innerHTML = '';
+    var diff = Math.abs(t[0] - t[1]), d = document.createElement('div');
+    if (diff > 0) {
+      var lag = t[0] < t[1] ? 0 : 1;
+      d.className = 'msg need';
+      d.textContent = nm(lag) + ' يحتاج ' + diff + ' نقطة';
+    } else if (t[0] > 0) {
+      d.className = 'msg gap';
+      d.textContent = 'النتيجة متعادلة';
+    } else return;
+    box.appendChild(d);
+  }
+
+  function normalize(){
+    while (state.rows.length > 1) {
+      var a = state.rows[state.rows.length-1], b = state.rows[state.rows.length-2];
+      if (a[0]==='' && a[1]==='' && b[0]==='' && b[1]==='') state.rows.pop(); else break;
+    }
+    var last = state.rows[state.rows.length-1];
+    if (!last || last[0] !== '' || last[1] !== '') state.rows.push(['','']);
+  }
+
+  function isX(v){ return String(v).trim().toUpperCase() === 'XX'; }
+
+  function makeRow(idx){
+    var d = document.createElement('div');
+    d.className = 'row';
+    var ins = [];
+    [0,1].forEach(function(i){
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.autocomplete = 'off';
+      inp.pattern = '[0-9]*';
+      inp.maxLength = 6;
+      inp.value = state.rows[idx][i];
+      inp.classList.toggle('x', isX(inp.value));
+      inp.setAttribute('aria-label', (i ? 'نتيجة الفريق الثاني' : 'نتيجة الفريق الأول') + ' - سطر ' + (idx+1));
+      inp.addEventListener('focus', function(){ setTimeout(function(){ try { inp.select(); } catch (e) {} }, 0); });
+      inp.addEventListener('input', function(){
+        var raw = inp.value;
+        var v = raw.replace(/\D/g, '');
+        if (v !== raw) inp.value = v;
+        var o = 1 - i, other = ins[o];
+        state.rows[idx][i] = v;
+        inp.classList.remove('x');
+        if (v !== '' && state.rows[idx][o] === '') {
+          state.rows[idx][o] = 'XX'; other.value = 'XX'; other.classList.add('x');
+        } else if (v === '' && isX(state.rows[idx][o])) {
+          state.rows[idx][o] = ''; other.value = ''; other.classList.remove('x');
+        }
+        if (idx === state.rows.length - 1 && (state.rows[idx][0] !== '' || state.rows[idx][1] !== '')) {
+          state.rows.push(['','']);
+          rowsEl.appendChild(makeRow(state.rows.length - 1));
+        }
+        renderTotals(); save();
+      });
+      ins.push(inp);
+      d.appendChild(inp);
+    });
+    var rn = document.createElement('span');
+    rn.className = 'rn'; rn.setAttribute('aria-hidden', 'true'); rn.textContent = idx + 1;
+    d.appendChild(rn);
+    return d;
+  }
+
+  function render(){
+    normalize();
+    $('#na').value = state.names[0] || '';
+    $('#nb').value = state.names[1] || '';
+    rowsEl.innerHTML = '';
+    state.rows.forEach(function(_, idx){ rowsEl.appendChild(makeRow(idx)); });
+    renderTotals(); save();
+  }
+
+  ['#na','#nb'].forEach(function(sel, i){
+    $(sel).addEventListener('input', function(e){ state.names[i] = e.target.value; renderTotals(); save(); });
+  });
+
+  $('#undo').addEventListener('click', function(){
+    var i = state.rows.length - 1;
+    while (i >= 0 && state.rows[i][0] === '' && state.rows[i][1] === '') i--;
+    if (i >= 0) state.rows.splice(i, 1);
+    if (!state.rows.length) state.rows = [['','']];
+    render();
+  });
+
+  var resetBtn = $('#reset'), timer = null;
+  resetBtn.addEventListener('click', function(){
+    if (timer) {
+      clearTimeout(timer); timer = null;
+      resetBtn.textContent = '🔄 جولة جديدة'; resetBtn.classList.remove('warn');
+      state.rows = [['','']];
+      render();
+    } else {
+      resetBtn.textContent = 'اضغط مرة ثانية للتأكيد'; resetBtn.classList.add('warn');
+      timer = setTimeout(function(){
+        timer = null; resetBtn.textContent = '🔄 جولة جديدة'; resetBtn.classList.remove('warn');
+      }, 3000);
+    }
+  });
+
+  render();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
